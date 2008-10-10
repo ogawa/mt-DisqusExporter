@@ -21,6 +21,8 @@ use constant USER_API_KEY    => 'your user api key';
 
 use constant VERBOSE => 0;
 
+our $VERSION = '0.1-dev';
+
 use MT;
 use MT::Blog;
 use MT::Entry;
