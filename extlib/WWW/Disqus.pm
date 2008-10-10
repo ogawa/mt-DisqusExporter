@@ -67,7 +67,6 @@ sub get_forum_list {
     my $this         = shift;
     my $user_api_key = $this->user_api_key
       or confess 'user_api_key must be set';
-    my ($forum_name) = @_;
     my $res =
       $this->{ua}
       ->get( DISQUS_API_URL . "get_forum_list/?user_api_key=" . $user_api_key );
