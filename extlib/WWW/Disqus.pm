@@ -175,7 +175,6 @@ sub get_thread_posts {
     return $obj->{message} if is_succeeded($obj);
 }
 
-# XXX
 sub thread_by_identifier {
     my $this          = shift;
     my $forum_api_key = $this->forum_api_key
@@ -213,3 +212,152 @@ sub update_thread {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+WWW::Disqus - Perl extension for accessing DISQUS API
+
+=head1 SYNOPSIS
+
+  use WWW::Disqus;
+
+  # create a calendar object
+  my $api = WWW::Disqus->new;
+
+  # set user_api_key
+  $api->user_api_key('your_user_api_key');
+
+  # set forum_api_key by using forum_name
+  $api->set_forum_api_key_by_forum_name('your_forum_name');
+
+  # retrieve the thread list of the forum
+  my $thread_list = $api->get_thread_list();
+
+=head1 DESCRIPTION
+
+C<WWW::Disqus> is a Perl extension for accessing DISQUS API.
+
+=head1 REQUIREMENT
+
+This application requires perl 5.8.0 with following Perl modules
+installed on your box.
+
+=over 4
+
+=item JSON 1.1
+
+=item LWP::UserAgent
+
+=item Class::Accessor::Fast
+
+=back
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item new(%attr)
+
+Creates and returns a new instance of WWW::Disqus.  Following
+attributes are available.
+
+=over 8
+
+=item user_api_key
+
+User API Key for your DISQUS account.
+
+=back
+
+=item user_api_key([$user_api_key])
+
+Gets/sets the User API Key.
+
+=item forum_api_key([$forum_api_key])
+
+Gets/sets the Forum API Key.
+
+=item get_forum_id($forum_name)
+
+Gets the forum_id correnponding to the given forum name.
+
+=item set_forum_api_key_by_forum_id($forum_id)
+
+Sets the Forum API Key correnponding to the given forum_id.
+
+=item set_forum_api_key_by_forum_name($forum_name)
+
+Sets the Forum API Key correnponding to the given forum_name.
+
+=item get_forum_list()
+
+Gets a list of objects representing all forums the user owns.
+
+=item get_forum_api_key($forum_id)
+
+Gets a string of the Forum API Key corresponding to the given
+forum_id.
+
+=item create_post(%param)
+
+TBD
+
+=item get_thread_list()
+
+TBD
+
+=item get_num_posts([$thread_ids])
+
+TBD
+
+=item get_thread_by_url($url)
+
+TBD
+
+=item get_thread_posts($thread_id)
+
+TBD
+
+=item thread_by_identifier(%param)
+
+TBD
+
+=item update_thread(%param)
+
+TBD
+
+=back
+
+=head1 EXPORT
+
+None.
+
+=head1 DEVELOPMENT
+
+The development version is always available from the following
+subversion repository:
+
+  http://code.as-is.net/svn/public/WWW-Disqus/trunk/
+
+You can browse the files via Trac from the following:
+
+  http://code.as-is.net/public/browser/WWW-Disqus/trunk/
+
+Any comments, suggestions, or patches are welcome.
+
+=head1 LICENSE
+
+Copyright (c) 2008 Hirotaka Ogawa E<lt>hirotaka.ogawa at gmail.comE<gt>.
+All rights reserved.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of either:
+
+   a) the GNU General Public License as published by the Free Software
+      Foundation; either version 1, or (at your option) any later
+      version, or
+
+   b) the "Artistic License" which comes with Perl.
+
+=cut
