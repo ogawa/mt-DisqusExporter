@@ -19,7 +19,7 @@ use constant SHORT_NAME      => 'your forum short name';
 use constant ANONYMOUS_EMAIL => 'nobody@your.domain';
 use constant USER_API_KEY    => 'your user api key';
 
-use constant VERBOSE => 1;
+use constant VERBOSE => 0;
 
 use MT;
 use MT::Blog;
@@ -37,23 +37,36 @@ my $iter = MT::Entry->load_iter(
     {
         blog_id => BLOG_ID,
         status  => MT::Entry::RELEASE,
+    },
+    {
+        join => [
+            'MT::Comment', 'entry_id',
+            { blog_id => BLOG_ID, visible => 1 }, { unique => 1 }
+        ],
     }
 );
 
+my %stats = (
+    entry_processed   => 0,
+    entry_skipped     => 0,
+    comment_processed => 0,
+    comment_failed    => 0
+);
+my @permalinks_without_threads = ();
 while ( my $entry = $iter->() ) {
-    next unless $entry->comment_count;
-
     my $thread;
     eval { $thread = $api->get_thread_by_url( $entry->permalink ); };
     if ($@) {
-        print STDERR "Failed to get a Disqus thread for MT::Entry(ID="
-          . $entry->id
-          . "): $@\n";
+        $stats{entry_skipped}++;
+        print STDERR "Disqus API error: $@\n" if VERBOSE;
         next;
     }
     unless ( exists $thread->{id} ) {
+        $stats{entry_skipped}++;
+        push @permalinks_without_threads, $entry->permalink;
         print STDERR "No Disqus thread found for MT::Entry(ID="
-          . $entry->id . ")\n";
+          . $entry->id . ")\n"
+          if VERBOSE;
         next;
     }
     my $thread_id = $thread->{id};
@@ -98,25 +111,47 @@ while ( my $entry = $iter->() ) {
             message      => $comment->text,
             author_name  => $author_name,
             author_email => $author_email,
-            created_at => $created_at,
-            $author_url ? ( author_url => $author_url ) : (),
-            $comment->ip ? ( ip_address => $comment->ip) : (),
+            created_at   => $created_at,
+            $author_url  ? ( author_url => $author_url )  : (),
+            $comment->ip ? ( ip_address => $comment->ip ) : (),
         );
         my $post;
         eval { $post = $api->create_post(%post_data); };
         if ($@) {
-            print STDERR "Failed to create a Disqus post for MT::Comment(ID="
-              . $comment->id
-              . "): $@\n";
+            $stats{comment_failed}++;
+            print STDERR "Disqus API error: $@\n" if VERBOSE;
             next;
         }
         $comment->visible(0);
         $comment->save or die $comment->errstr;
+        $stats{comment_processed}++;
         print STDERR "MT::Comment(ID="
           . $comment->id
           . ") successfully converted to Disqus post(ID="
           . $post->{id} . ")\n"
           if VERBOSE;
+    }
+    $stats{entry_processed}++;
+}
+
+# Statistics
+print << "EOD";
+-----------------------------------
+ Statistics
+-----------------------------------
+Processed entries: $stats{entry_processed}
+  Skipped entries: $stats{entry_skipped}
+Exported comments: $stats{comment_processed}
+  Failed comments: $stats{comment_failed}
+EOD
+if (@permalinks_without_threads) {
+    print << "EOD";
+-----------------------------------
+ Permalinks without Disqus threads
+-----------------------------------
+EOD
+    for (@permalinks_without_threads) {
+        print $_ . "\n";
     }
 }
 
