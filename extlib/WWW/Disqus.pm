@@ -62,14 +62,23 @@ sub is_succeeded {
     confess $obj->{message};
 }
 
+sub disqus_api_url {
+    my ( $method, %param ) = @_;
+    my $url = DISQUS_API_URL . $method;
+    if (%param) {
+        $url .= '?' . join( '&', map { $_ . '=' . $param{$_} } keys %param );
+    }
+    $url;
+}
+
 ## API methods (using user_api_key)
 sub get_forum_list {
     my $this         = shift;
     my $user_api_key = $this->user_api_key
       or confess 'user_api_key must be set';
     my $res =
-      $this->{ua}
-      ->get( DISQUS_API_URL . "get_forum_list/?user_api_key=" . $user_api_key );
+      $this->{ua}->get(
+        disqus_api_url( "get_forum_list", user_api_key => $user_api_key ) );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -81,12 +90,13 @@ sub get_forum_api_key {
     my $user_api_key = $this->user_api_key
       or confess 'user_api_key must be set';
     my ($forum_id) = @_;
-    my $res =
-      $this->{ua}->get( DISQUS_API_URL
-          . "get_forum_api_key/?user_api_key="
-          . $user_api_key
-          . "&forum_id="
-          . $forum_id );
+    my $res = $this->{ua}->get(
+        disqus_api_url(
+            "get_forum_api_key",
+            user_api_key => $user_api_key,
+            forum_id     => $forum_id
+        )
+    );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -100,7 +110,7 @@ sub create_post {
       or confess 'forum_api_key must be set';
     my (%param) = @_;
     my $res = $this->{ua}->post(
-        DISQUS_API_URL . "create_post/",
+        disqus_api_url("create_post"),
         {
             forum_api_key => $forum_api_key,
             %param,
@@ -118,7 +128,7 @@ sub get_thread_list {
       or confess 'forum_api_key must be set';
     my $res =
       $this->{ua}->get(
-        DISQUS_API_URL . "get_thread_list/?forum_api_key=" . $forum_api_key );
+        disqus_api_url( "get_thread_list", forum_api_key => $forum_api_key ) );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -130,12 +140,13 @@ sub get_num_posts {
     my $forum_api_key = $this->forum_api_key
       or confess 'forum_api_key must be set';
     my ($thread_ids) = @_;
-    my $res =
-      $this->{ua}->get( DISQUS_API_URL
-          . "get_num_posts/?forum_api_key="
-          . $forum_api_key
-          . "&thread_ids="
-          . $thread_ids );
+    my $res = $this->{ua}->get(
+        disqus_api_url(
+            "get_num_posts",
+            forum_api_key => $forum_api_key,
+            thread_ids    => $thread_ids
+        )
+    );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -147,11 +158,13 @@ sub get_thread_by_url {
     my $forum_api_key = $this->forum_api_key
       or confess 'forum_api_key must be set';
     my ($url) = @_;
-    my $res =
-      $this->{ua}->get( DISQUS_API_URL
-          . "get_thread_by_url/?forum_api_key="
-          . $forum_api_key
-          . "&url=$url" );
+    my $res = $this->{ua}->get(
+        disqus_api_url(
+            "get_thread_by_url",
+            forum_api_key => $forum_api_key,
+            url           => $url
+        )
+    );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -163,12 +176,13 @@ sub get_thread_posts {
     my $forum_api_key = $this->forum_api_key
       or confess 'forum_api_key must be set';
     my ($thread_id) = @_;
-    my $res =
-      $this->{ua}->get( DISQUS_API_URL
-          . "get_thread_posts/?forum_api_key="
-          . $forum_api_key
-          . "&thread_id="
-          . $thread_id );
+    my $res = $this->{ua}->get(
+        disqus_api_url(
+            "get_thread_posts",
+            forum_api_key => $forum_api_key,
+            thread_id     => $thread_id
+        )
+    );
     confess 'Failed to access DISQUS API: ' . $res->status_line
       unless $res->is_success;
     my $obj = $this->{json}->jsonToObj( $res->content );
@@ -181,7 +195,7 @@ sub thread_by_identifier {
       or confess 'forum_api_key must be set';
     my (%param) = @_;
     my $res = $this->{ua}->post(
-        DISQUS_API_URL . "thread_by_identifier/",
+        disqus_api_url("thread_by_identifier"),
         {
             forum_api_key => $forum_api_key,
             %param,
@@ -199,7 +213,7 @@ sub update_thread {
       or confess 'forum_api_key must be set';
     my (%param) = @_;
     my $res = $this->{ua}->post(
-        DISQUS_API_URL . "update_thread/",
+        disqus_api_url("update_thread"),
         {
             forum_api_key => $forum_api_key,
             %param,
