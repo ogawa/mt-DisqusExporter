@@ -33,8 +33,9 @@ use WWW::Disqus;
 my $api = WWW::Disqus->new( user_api_key => USER_API_KEY );
 $api->set_forum_api_key_by_forum_name(SHORT_NAME);
 
-my $mt   = MT->new;
-my $blog = MT::Blog->load(BLOG_ID);
+my $mt = MT->new() or die MT->errstr;
+my $blog = MT::Blog->load(BLOG_ID)
+  or die 'Cannot find MT::Blog(ID:' . BLOG_ID . ')';
 my $iter = MT::Entry->load_iter(
     {
         blog_id => BLOG_ID,
@@ -66,7 +67,7 @@ while ( my $entry = $iter->() ) {
     unless ( exists $thread->{id} ) {
         $stats{entry_skipped}++;
         push @permalinks_without_threads, $entry->permalink;
-        print STDERR "No Disqus thread found for MT::Entry(ID="
+        print STDERR "No Disqus thread found for MT::Entry(ID:"
           . $entry->id . ")\n"
           if VERBOSE;
         next;
@@ -127,9 +128,9 @@ while ( my $entry = $iter->() ) {
         $comment->visible(0);
         $comment->save or die $comment->errstr;
         $stats{comment_processed}++;
-        print STDERR "MT::Comment(ID="
+        print STDERR "MT::Comment(ID:"
           . $comment->id
-          . ") successfully converted to Disqus post(ID="
+          . ") successfully converted to Disqus post(ID:"
           . $post->{id} . ")\n"
           if VERBOSE;
     }
