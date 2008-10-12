@@ -306,7 +306,7 @@ Sets the Forum API Key correnponding to the given forum_name.
 
 =item get_forum_list()
 
-Gets a list of objects representing all forums the user owns.
+Gets an ARRAYREF of HASHREFs representing all forums the user owns.
 
 =item get_forum_api_key($forum_id)
 
@@ -319,7 +319,8 @@ TBD
 
 =item get_thread_list()
 
-TBD
+Gets an ARRAYREF of HASHREFs representing all threads belonging to the
+given forum.
 
 =item get_num_posts([$thread_ids])
 
@@ -327,11 +328,13 @@ TBD
 
 =item get_thread_by_url($url)
 
-TBD
+Checks an existence of a thread associated to the given URL, and if
+one was found, returns a HASHREF representing the thread.
 
 =item get_thread_posts($thread_id)
 
-TBD
+Gets an ARRAYREF of HASHREFs representing all posts belonging to a
+thread which is specified by the givin thread_id.
 
 =item thread_by_identifier(%param)
 
