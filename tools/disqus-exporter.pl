@@ -11,17 +11,25 @@
 use strict;
 use warnings;
 
-use lib 'lib', '../lib';
+use lib qw( lib ../lib );
 use MT::Bootstrap;
 
-use constant BLOG_ID         => 1;
-use constant SHORT_NAME      => 'your forum short name';
-use constant ANONYMOUS_EMAIL => 'nobody@your.domain';
-use constant USER_API_KEY    => 'your user api key';
-
-use constant VERBOSE => 0;
-
 our $VERSION = '0.1-dev';
+
+use Getopt::Long;
+use YAML::Tiny;
+
+sub usage {
+    print "Usage: $0 --config <config.yaml> [ --verbose ]\n";
+    exit(1);
+}
+
+GetOptions( 'config=s', \my $yaml, 'verbose', \my $verbose ) or usage();
+usage() unless defined $yaml;
+my ($cfg) = YAML::Tiny::LoadFile($yaml);
+for (qw( blog_id forum_name default_email user_api_key)) {
+    die "'$_' is not defined in $yaml" unless defined $cfg->{$_};
+}
 
 use MT;
 use MT::Blog;
@@ -30,24 +38,24 @@ use MT::I18N;
 use MT::Util;
 use WWW::Disqus;
 
-my $api = WWW::Disqus->new( user_api_key => USER_API_KEY );
-$api->set_forum_api_key_by_forum_name(SHORT_NAME);
-
 my $mt = MT->new() or die MT->errstr;
-my $blog = MT::Blog->load(BLOG_ID)
-  or die 'Cannot find MT::Blog(ID:' . BLOG_ID . ')';
+my $blog = MT::Blog->load( $cfg->{blog_id} )
+  or die 'Cannot find MT::Blog(ID:' . $cfg->{blog_id} . ')';
 my $iter = MT::Entry->load_iter(
     {
-        blog_id => BLOG_ID,
+        blog_id => $cfg->{blog_id},
         status  => MT::Entry::RELEASE,
     },
     {
         join => [
             'MT::Comment', 'entry_id',
-            { blog_id => BLOG_ID, visible => 1 }, { unique => 1 }
+            { blog_id => $cfg->{blog_id}, visible => 1 }, { unique => 1 }
         ],
     }
 );
+
+my $api = WWW::Disqus->new( user_api_key => $cfg->{user_api_key} );
+$api->set_forum_api_key_by_forum_name( $cfg->{forum_name} );
 
 my %stats = (
     entry_processed   => 0,
@@ -61,7 +69,7 @@ while ( my $entry = $iter->() ) {
     eval { $thread = $api->get_thread_by_url( $entry->permalink ); };
     if ($@) {
         $stats{entry_skipped}++;
-        print STDERR "Disqus API error: $@\n" if VERBOSE;
+        print STDERR "Disqus API error: $@\n" if $verbose;
         next;
     }
     unless ( exists $thread->{id} ) {
@@ -69,7 +77,7 @@ while ( my $entry = $iter->() ) {
         push @permalinks_without_threads, $entry->permalink;
         print STDERR "No Disqus thread found for MT::Entry(ID:"
           . $entry->id . ")\n"
-          if VERBOSE;
+          if $verbose;
         next;
     }
     my $thread_id = $thread->{id};
@@ -81,7 +89,7 @@ while ( my $entry = $iter->() ) {
         my $author_name = MT::I18N::first_n( $comment->author, 30 );
 
         # author_email
-        my $author_email = ANONYMOUS_EMAIL;
+        my $author_email = $cfg->{default_email};
         if ( $comment->email && MT::Util::is_valid_email( $comment->email ) ) {
             $author_email = $comment->email;
         }
@@ -122,7 +130,7 @@ while ( my $entry = $iter->() ) {
         eval { $post = $api->create_post(%post_data); };
         if ($@) {
             $stats{comment_failed}++;
-            print STDERR "Disqus API error: $@\n" if VERBOSE;
+            print STDERR "Disqus API error: $@\n" if $verbose;
             next;
         }
         $comment->visible(0);
@@ -132,7 +140,7 @@ while ( my $entry = $iter->() ) {
           . $comment->id
           . ") successfully converted to Disqus post(ID:"
           . $post->{id} . ")\n"
-          if VERBOSE;
+          if $verbose;
     }
     $stats{entry_processed}++;
 }

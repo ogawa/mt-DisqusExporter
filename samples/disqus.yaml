@@ -1,0 +1,4 @@
+blog_id:       1
+forum_name:    your_forum_short_name
+default_email: nobody@your.domain
+user_api_key:  your_user_api_key
