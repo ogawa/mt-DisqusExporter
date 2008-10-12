@@ -64,7 +64,7 @@ sub is_succeeded {
 
 sub disqus_api_url {
     my ( $method, %param ) = @_;
-    my $url = DISQUS_API_URL . $method;
+    my $url = DISQUS_API_URL . $method . '/';
     if (%param) {
         $url .= '?' . join( '&', map { $_ . '=' . $param{$_} } keys %param );
     }
